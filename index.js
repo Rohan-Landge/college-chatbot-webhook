@@ -12,7 +12,7 @@ app.post("/webhook", async (req, res) => {
   console.log(`🎯 Intent: ${intent}`);
   console.log(`💬 User: ${userMessage}`);
 
-  // College-specific intents
+  // --- College-specific intents ---
   if (intent === "Get Fees Info") {
     return res.json({
       fulfillmentText: "The annual fee for B.Tech is around ₹95,000 per year."
@@ -25,12 +25,13 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  // 🧠 Default fallback (Gemini API)
+  // --- Default Fallback (Gemini API) ---
   if (intent === "Default Fallback Intent") {
     console.log("🚀 Fallback triggered, calling Gemini API...");
+
     try {
       const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -51,6 +52,7 @@ Question: ${userMessage}`
         }
       );
 
+      console.log("Status:", geminiResponse.status);
       const data = await geminiResponse.json();
       console.log("💡 Gemini response:", data);
 
@@ -67,10 +69,5 @@ Question: ${userMessage}`
     }
   }
 
-  // ⚠️ Catch-all for unknown intents
-  return res.json({ fulfillmentText: "Sorry, I didn’t understand that." });
-}); // <-- closes app.post
-
-const PORT = process.env.PORT || 10000; // use the env variable Render provides
-app.listen(PORT, () => console.log(`🚀 Webhook server running on port ${PORT}`));
-
+  // --- Catch-all for unknown intents ---
+  return
