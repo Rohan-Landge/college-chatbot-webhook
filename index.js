@@ -28,43 +28,44 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  // 🧠 Default fallback (calls GPT or Gemini if you want dynamic response)
-  if (intent === "Default Fallback Intent") {
-    try {
-      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+  // 🧠 Default fallback (calls Gemini for general questions)
+if (intent === "Default Fallback Intent") {
+  try {
+    const geminiResponse = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
+      {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer YOUR_OPENAI_API_KEY`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            { role: "system", content: "You are a polite college assistant. Keep answers short and relevant to college context." },
-            { role: "user", content: userMessage }
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `You are a polite and helpful assistant for a college chatbot. 
+                  If the question is not about the college, answer briefly and factually.\n
+                  Question: ${userMessage}`
+                }
+              ]
+            }
           ]
         })
-      });
+      }
+    );
 
-      const data = await openaiResponse.json();
-      const aiReply = data.choices?.[0]?.message?.content || "Sorry, I don’t have information on that.";
+    const data = await geminiResponse.json();
+    const aiReply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I don’t have information on that.";
 
-      return res.json({
-        fulfillmentText: aiReply
-      });
-
-    } catch (error) {
-      console.error("❌ Error calling OpenAI:", error);
-      return res.json({
-        fulfillmentText: "I'm having trouble answering right now. Please try again later."
-      });
-    }
+    return res.json({ fulfillmentText: aiReply });
+  } catch (error) {
+    console.error("❌ Error calling Gemini API:", error);
+    return res.json({
+      fulfillmentText: "I'm having trouble answering right now. Please try again later."
+    });
   }
+}
 
-  // Default response if no matching intent
-  return res.json({
-    fulfillmentText: "Okay, got it!"
-  });
-});
 
 app.listen(3000, () => console.log("🚀 Webhook server running on port 3000"));
