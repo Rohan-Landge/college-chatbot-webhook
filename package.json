@@ -1,14 +1,14 @@
 {
-  "type": "module",
   "name": "college-chatbot-webhook",
   "version": "1.0.0",
-  "description": "",
+  "description": "Webhook server for Dialogflow college chatbot",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["chatbot", "dialogflow", "webhook", "college"],
+  "author": "Rohan Landge",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.0",
