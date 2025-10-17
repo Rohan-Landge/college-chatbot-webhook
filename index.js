@@ -71,5 +71,6 @@ Question: ${userMessage}`
   return res.json({ fulfillmentText: "Sorry, I didn’t understand that." });
 }); // <-- closes app.post
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // use the env variable Render provides
 app.listen(PORT, () => console.log(`🚀 Webhook server running on port ${PORT}`));
+
