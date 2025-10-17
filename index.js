@@ -5,6 +5,7 @@ import fetch from "node-fetch";
 const app = express();
 app.use(bodyParser.json());
 
+// --- Webhook endpoint ---
 app.post("/webhook", async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
   const userMessage = req.body.queryResult.queryText;
@@ -54,7 +55,7 @@ Question: ${userMessage}`
 
       console.log("Status:", geminiResponse.status);
       const data = await geminiResponse.json();
-      console.log("💡 Gemini response:", data);
+      console.log("💡 Gemini response:", JSON.stringify(data, null, 2));
 
       const aiReply =
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
@@ -70,4 +71,9 @@ Question: ${userMessage}`
   }
 
   // --- Catch-all for unknown intents ---
-  return
+  return res.json({ fulfillmentText: "Sorry, I didn’t understand that." });
+});
+
+// --- Start server ---
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`🚀 Webhook server running on port ${PORT}`));
