@@ -1,11 +1,14 @@
 import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
+import dotenv from "dotenv";
+
+dotenv.config(); // Load .env file locally or from Render environment
 
 const app = express();
 app.use(bodyParser.json());
 
-// --- Webhook endpoint ---
+// --- Webhook endpoint for Dialogflow ---
 app.post("/webhook", async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
   const userMessage = req.body.queryResult.queryText;
@@ -26,13 +29,13 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  // --- Default Fallback (Gemini API) ---
+  // --- Default Fallback Intent (calls Gemini API) ---
   if (intent === "Default Fallback Intent") {
     console.log("🚀 Fallback triggered, calling Gemini API...");
 
     try {
       const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -40,13 +43,7 @@ app.post("/webhook", async (req, res) => {
             contents: [
               {
                 role: "user",
-                parts: [
-                  {
-                    text: `You are a polite and helpful assistant for a college chatbot. 
-If the question is not about the college, answer briefly and factually.
-Question: ${userMessage}`
-                  }
-                ]
+                parts: [{ text: userMessage }]
               }
             ]
           })
@@ -55,23 +52,26 @@ Question: ${userMessage}`
 
       console.log("Status:", geminiResponse.status);
       const data = await geminiResponse.json();
-      console.log("💡 Gemini response:", JSON.stringify(data, null, 2));
+      console.log("💡 Gemini response:", data);
 
       const aiReply =
-        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
         "Sorry, I don’t have information on that.";
 
       return res.json({ fulfillmentText: aiReply });
     } catch (error) {
       console.error("❌ Error calling Gemini API:", error);
       return res.json({
-        fulfillmentText: "I'm having trouble answering right now. Please try again later."
+        fulfillmentText:
+          "I'm having trouble answering right now. Please try again later."
       });
     }
   }
 
   // --- Catch-all for unknown intents ---
-  return res.json({ fulfillmentText: "Sorry, I didn’t understand that." });
+  return res.json({
+    fulfillmentText: "Sorry, I didn’t understand that."
+  });
 });
 
 // --- Start server ---
