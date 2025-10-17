@@ -7,11 +7,17 @@
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": ["chatbot", "dialogflow", "webhook", "college"],
+  "keywords": [
+    "chatbot",
+    "dialogflow",
+    "webhook",
+    "college"
+  ],
   "author": "Rohan Landge",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.0",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "node-fetch": "^3.3.2"
   }
