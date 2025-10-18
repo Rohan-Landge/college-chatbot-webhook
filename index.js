@@ -8,6 +8,21 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 
+// --- Helper function: clean long/markdown text ---
+function cleanText(text) {
+  if (!text) return "Sorry, I don’t have information on that.";
+  
+  // Remove markdown formatting
+  text = text.replace(/\*\*/g, "").replace(/\*/g, "");
+  
+  // Limit length to ~1500 characters for Dialogflow display
+  if (text.length > 1500) {
+    text = text.slice(0, 1400) + "... (answer shortened)";
+  }
+  
+  return text.trim();
+}
+
 // --- Webhook endpoint for Dialogflow ---
 app.post("/webhook", async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
@@ -55,21 +70,14 @@ app.post("/webhook", async (req, res) => {
       const data = await geminiResponse.json();
       console.log("💡 Gemini response:", data);
 
-      // ✅ Extract clean text reply from Gemini API
-      let aiReply = "Sorry, I don’t have information on that.";
-      if (
-        data?.candidates?.[0]?.content?.parts?.[0]?.text
-      ) {
-        aiReply = data.candidates[0].content.parts[0].text;
-      }
+      let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      aiReply = cleanText(aiReply);
 
-      console.log("💬 Gemini Reply:", aiReply);
+      console.log("💬 Clean Reply:", aiReply);
 
-      // ✅ Send proper format for Dialogflow Messenger display
       return res.json({
         fulfillmentText: aiReply
       });
-
     } catch (error) {
       console.error("❌ Error calling Gemini API:", error);
       return res.json({
@@ -79,7 +87,7 @@ app.post("/webhook", async (req, res) => {
     }
   }
 
-  // --- Catch-all for unknown intents ---
+  // --- Catch-all ---
   return res.json({
     fulfillmentText: "Sorry, I didn’t understand that."
   });
