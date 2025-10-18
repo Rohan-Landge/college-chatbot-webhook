@@ -25,7 +25,8 @@ app.post("/webhook", async (req, res) => {
 
   if (intent === "Get Admission Process") {
     return res.json({
-      fulfillmentText: "You can apply for admission through the DTE Maharashtra CAP process."
+      fulfillmentText:
+        "You can apply for admission through the DTE Maharashtra CAP process."
     });
   }
 
@@ -57,27 +58,18 @@ app.post("/webhook", async (req, res) => {
       // ✅ Extract clean text reply from Gemini API
       let aiReply = "Sorry, I don’t have information on that.";
       if (
-        data &&
-        data.candidates &&
-        data.candidates.length > 0 &&
-        data.candidates[0].content &&
-        data.candidates[0].content.parts &&
-        data.candidates[0].content.parts.length > 0 &&
-        data.candidates[0].content.parts[0].text
+        data?.candidates?.[0]?.content?.parts?.[0]?.text
       ) {
         aiReply = data.candidates[0].content.parts[0].text;
       }
 
       console.log("💬 Gemini Reply:", aiReply);
 
-      // ✅ Send reply to Dialogflow
+      // ✅ Send proper format for Dialogflow Messenger display
       return res.json({
-        fulfillmentMessages: [
-          {
-            text: { text: [aiReply] }
-          }
-        ]
+        fulfillmentText: aiReply
       });
+
     } catch (error) {
       console.error("❌ Error calling Gemini API:", error);
       return res.json({
@@ -95,4 +87,6 @@ app.post("/webhook", async (req, res) => {
 
 // --- Start server ---
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Webhook server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Webhook server running on port ${PORT}`)
+);
