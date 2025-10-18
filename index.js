@@ -54,11 +54,30 @@ app.post("/webhook", async (req, res) => {
       const data = await geminiResponse.json();
       console.log("💡 Gemini response:", data);
 
-      const aiReply =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "Sorry, I don’t have information on that.";
+      // ✅ Extract clean text reply from Gemini API
+      let aiReply = "Sorry, I don’t have information on that.";
+      if (
+        data &&
+        data.candidates &&
+        data.candidates.length > 0 &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts.length > 0 &&
+        data.candidates[0].content.parts[0].text
+      ) {
+        aiReply = data.candidates[0].content.parts[0].text;
+      }
 
-      return res.json({ fulfillmentText: aiReply });
+      console.log("💬 Gemini Reply:", aiReply);
+
+      // ✅ Send reply to Dialogflow
+      return res.json({
+        fulfillmentMessages: [
+          {
+            text: { text: [aiReply] }
+          }
+        ]
+      });
     } catch (error) {
       console.error("❌ Error calling Gemini API:", error);
       return res.json({
