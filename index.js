@@ -3,7 +3,7 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load .env file locally or from Render environment
+dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
@@ -40,11 +40,12 @@ app.post("/webhook", async (req, res) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: {
-              text: `You are a polite college assistant chatbot. Answer this question: ${userMessage}`
-            },
-            temperature: 0.2,
-            maxOutputTokens: 200
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: userMessage }]
+              }
+            ]
           })
         }
       );
@@ -54,7 +55,7 @@ app.post("/webhook", async (req, res) => {
       console.log("💡 Gemini response:", data);
 
       const aiReply =
-        data?.candidates?.[0]?.output?.content?.[0]?.text ||
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
         "Sorry, I don’t have information on that.";
 
       return res.json({ fulfillmentText: aiReply });
