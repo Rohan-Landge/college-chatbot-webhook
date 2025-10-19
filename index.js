@@ -11,15 +11,15 @@ app.use(bodyParser.json());
 // --- Helper function: clean long/markdown text ---
 function cleanText(text) {
   if (!text) return "Sorry, I don’t have information on that.";
-  
+
   // Remove markdown formatting
   text = text.replace(/\*\*/g, "").replace(/\*/g, "");
-  
+
   // Limit length to ~1500 characters for Dialogflow display
   if (text.length > 1500) {
     text = text.slice(0, 1400) + "... (answer shortened)";
   }
-  
+
   return text.trim();
 }
 
@@ -29,17 +29,22 @@ app.post("/webhook", async (req, res) => {
   console.log("💬 User:", queryText);
 
   try {
-    // Call Gemini
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_API_KEY", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: queryText }] }]
-      })
-    });
+    // Call Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: queryText }] }],
+        }),
+      }
+    );
 
     const data = await response.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm not sure about that.";
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I'm not sure about that.";
 
     console.log("💡 Gemini Reply:", reply);
 
@@ -50,25 +55,23 @@ app.post("/webhook", async (req, res) => {
     }
 
     // Send as multiple messages (Dialogflow can handle array)
-    res.json({
-      fulfillmentMessages: safeChunks.map(chunk => ({
-        text: { text: [chunk] }
-      }))
+    return res.json({
+      fulfillmentMessages: safeChunks.map((chunk) => ({
+        text: { text: [chunk] },
+      })),
     });
-
   } catch (err) {
     console.error("❌ Error calling Gemini:", err);
-    res.json({
-      fulfillmentText: "Sorry, something went wrong while fetching that information."
+    return res.json({
+      fulfillmentText:
+        "Sorry, something went wrong while fetching that information.",
     });
   }
 });
 
-
-  // --- Catch-all ---
-  return res.json({
-    fulfillmentText: "Sorry, I didn’t understand that."
-  });
+// --- Default route (optional) ---
+app.get("/", (req, res) => {
+  res.send("✅ College Chatbot Webhook is running.");
 });
 
 // --- Start server ---
