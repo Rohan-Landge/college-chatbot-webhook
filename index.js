@@ -74,7 +74,7 @@ app.post("/webhook", async (req, res) => {
                     { text: "📍 College Location" },
                     { text: "📞 Contact Details" },
                     { text: "👨🏼‍💻 college erp website" },
-                    { text: "🎯 college vission" }
+                    { text: "🎯 college vission" },
                     { text: "🕓 college Timing" }
                   ]
                 }
