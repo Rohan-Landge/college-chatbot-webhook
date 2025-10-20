@@ -71,10 +71,11 @@ app.post("/webhook", async (req, res) => {
                   options: [
                     { text: "🏫 College Info" },
                     { text: "💰 Fee Structure" },
-                    { text: "🎓 Courses Offered" },
+                    { text: "📍 College Location" },
                     { text: "📞 Contact Details" },
-                    { text: "🎯 Placements" },
-                    { text: "🎖️ Scholarships" }
+                    { text: "👨🏼‍💻 college erp website" },
+                    { text: "🎯 college vission" }
+                    { text: "🕓 college Timing" }
                   ]
                 }
               ]
@@ -88,11 +89,23 @@ app.post("/webhook", async (req, res) => {
   // ✅ (Optional) Add future dynamic API (like Gemini or Database)
   if (intent === "Dynamic Info Intent") {
     try {
-      const response = await fetch("https://api.example.com/data");
-      const data = await response.json();
-      return res.json({
-        fulfillmentText: `Here’s the latest update: ${data.message}`
-      });
+     const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // set this in Render environment
+
+const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    contents: [{ parts: [{ text: userMessage }] }]
+  })
+});
+
+const geminiData = await geminiResponse.json();
+const aiText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn’t find any information about that.";
+
+return res.json({
+  fulfillmentText: aiText
+});
+
     } catch (err) {
       console.error("❌ API Error:", err);
       return res.json({
