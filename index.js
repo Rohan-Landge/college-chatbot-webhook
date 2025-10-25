@@ -75,7 +75,7 @@ app.post("/webhook", async (req, res) => {
 
     // Call Gemini API
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -146,5 +146,5 @@ app.post("/webhook", async (req, res) => {
 });
 
 // ✅ Start server (Render automatically sets PORT)
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Chatbot Webhook running on port ${PORT}`));
