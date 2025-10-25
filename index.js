@@ -1,5 +1,6 @@
 // --- index.js ---
-// College Chatbot Webhook with Rule-based Tags + API support
+// College Chatbot Webhook with Rule-based Intents + Gemini API + Fallback Buttons
+// Developed by Rohan Sir 💡
 
 import express from "express";
 import bodyParser from "body-parser";
@@ -8,32 +9,39 @@ import fetch from "node-fetch";
 const app = express();
 app.use(bodyParser.json());
 
+// ✅ Root Route (to verify Render deployment)
+app.get("/", (req, res) => {
+  res.send("🚀 College Chatbot Webhook Running Successfully!");
+});
+
+// ✅ Webhook Route
 app.post("/webhook", async (req, res) => {
   const intent = req.body.queryResult.intent.displayName;
   const userMessage = req.body.queryResult.queryText;
 
   console.log(`🎯 Intent: ${intent}`);
-  console.log(`💬 User: ${userMessage}`);
+  console.log(`💬 User Message: ${userMessage}`);
 
-  // ✅ Intent 1: Fees info
+  // 🎓 1️⃣ Rule-based replies
   if (intent === "Get Fees Info") {
     return res.json({
-      fulfillmentText: "The annual fee for B.Tech is around ₹95,000 per year."
+      fulfillmentText: "💰 The annual fee for B.Tech is around ₹95,000 per year."
     });
   }
 
-  // ✅ Intent 2: Admission process
   if (intent === "Get Admission Process") {
     return res.json({
-      fulfillmentText: "You can apply for admission through the DTE Maharashtra CAP process."
+      fulfillmentText:
+        "📝 You can apply for admission through the DTE Maharashtra CAP process. Visit the official DTE site for details."
     });
   }
 
-  // ✅ Intent 3: College contact info (example)
   if (intent === "Get College Contact") {
     return res.json({
       fulfillmentMessages: [
-        { text: { text: ["You can contact the college using the information below:"] } },
+        {
+          text: { text: ["📞 You can contact the college using the information below:"] }
+        },
         {
           payload: {
             richContent: [
@@ -54,14 +62,38 @@ app.post("/webhook", async (req, res) => {
     });
   }
 
-  // ✅ Fallback Intent: When Dialogflow cannot match an intent
-  if (intent === "Default Fallback Intent") {
-    // Instead of “I don't understand”, show popular tags/buttons
+  // 🧠 2️⃣ Out-of-the-box questions handled via Gemini API + Buttons
+  try {
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+    if (!GEMINI_API_KEY) {
+      console.error("🚨 Missing GEMINI_API_KEY in environment variables.");
+      return res.json({
+        fulfillmentText: "⚠️ Gemini API key not set. Please contact admin."
+      });
+    }
+
+    // Call Gemini API
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: userMessage }] }]
+        })
+      }
+    );
+
+    const geminiData = await geminiResponse.json();
+    const aiText =
+      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I couldn’t find an answer for that 😅. You can explore these topics 👇";
+
+    // ✅ Respond with Gemini text + buttons
     return res.json({
       fulfillmentMessages: [
-        {
-          text: { text: ["I couldn’t understand that 😅. You can explore these popular topics 👇"] }
-        },
+        { text: { text: [aiText] } },
         {
           payload: {
             richContent: [
@@ -73,9 +105,35 @@ app.post("/webhook", async (req, res) => {
                     { text: "💰 Fee Structure" },
                     { text: "📍 College Location" },
                     { text: "📞 Contact Details" },
-                    { text: "👨🏼‍💻 college erp website" },
-                    { text: "🎯 college vission" },
-                    { text: "🕓 college Timing" }
+                    { text: "👨🏼‍💻 College ERP" },
+                    { text: "🎯 College Vision" },
+                    { text: "🕓 College Timing" }
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      ]
+    });
+  } catch (error) {
+    console.error("❌ Gemini API Error:", error);
+    return res.json({
+      fulfillmentMessages: [
+        {
+          text: { text: ["Sorry 😔, I’m having trouble responding right now. Please try again later."] }
+        },
+        {
+          payload: {
+            richContent: [
+              [
+                {
+                  type: "chips",
+                  options: [
+                    { text: "💰 Fees Info" },
+                    { text: "📍 Location" },
+                    { text: "📞 Contact Us" },
+                    { text: "🎓 Admission Process" }
                   ]
                 }
               ]
@@ -85,40 +143,8 @@ app.post("/webhook", async (req, res) => {
       ]
     });
   }
-
-  // ✅ (Optional) Add future dynamic API (like Gemini or Database)
-  if (intent === "Dynamic Info Intent") {
-    try {
-     const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // set this in Render environment
-
-const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    contents: [{ parts: [{ text: userMessage }] }]
-  })
 });
 
-const geminiData = await geminiResponse.json();
-const aiText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn’t find any information about that.";
-
-return res.json({
-  fulfillmentText: aiText
-});
-
-    } catch (err) {
-      console.error("❌ API Error:", err);
-      return res.json({
-        fulfillmentText: "Sorry, I couldn’t fetch the information right now."
-      });
-    }
-  }
-
-  // ✅ Default catch-all
-  return res.json({
-    fulfillmentText: "Okay! Let me help you with that."
-  });
-});
-
-// Start server
-app.listen(3000, () => console.log("🚀 College Webhook running on port 3000"));
+// ✅ Start server (Render automatically sets PORT)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Chatbot Webhook running on port ${PORT}`));
