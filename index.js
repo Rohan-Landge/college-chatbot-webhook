@@ -5,6 +5,9 @@
 import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const app = express();
 app.use(bodyParser.json());
@@ -65,6 +68,8 @@ app.post("/webhook", async (req, res) => {
   // 🧠 2️⃣ Out-of-the-box questions handled via Gemini API + Buttons
   try {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    console.log("🔑 GEMINI_API_KEY Loaded:", !!GEMINI_API_KEY);
+
 
     if (!GEMINI_API_KEY) {
       console.error("🚨 Missing GEMINI_API_KEY in environment variables.");
