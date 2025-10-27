@@ -10,11 +10,12 @@ app.use(bodyParser.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// 🧠 Gemini API Function (using gemini-pro for better general Q&A)
+// 🧠 Gemini API Function (correct model + endpoint)
 async function callGeminiAPI(query) {
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      // ✅ Using v1 instead of v1beta + correct model name
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,8 +26,6 @@ async function callGeminiAPI(query) {
     );
 
     const data = await response.json();
-
-    // Debug log for Gemini response
     console.log("🔍 Gemini raw response:", JSON.stringify(data, null, 2));
 
     const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
@@ -52,23 +51,23 @@ app.post("/webhook", async (req, res) => {
   console.log(`💬 User Message: ${userMessage}`);
 
   try {
-    // 🔸 Fallback intent handled by Gemini
+    // 🔸 Fallback Intent handled by Gemini
     if (intent === "Default Fallback Intent") {
       const geminiResponse = await callGeminiAPI(userMessage);
       console.log("🤖 Gemini Response:", geminiResponse);
 
-      // If Gemini provides a valid answer
+      // ✅ Valid Gemini answer
       if (
         geminiResponse &&
         geminiResponse.trim().length > 0 &&
-        !geminiResponse.includes("No answer found")
+        !geminiResponse.includes("I couldn’t find an answer")
       ) {
         return res.json({
           fulfillmentMessages: [{ text: { text: [geminiResponse] } }],
         });
       }
 
-      // Show fallback buttons if Gemini has no valid answer
+      // ❌ No valid Gemini answer -> show popular topics
       return res.json({
         fulfillmentMessages: [
           {
@@ -102,7 +101,7 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    // 🧩 Manual intent responses
+    // 🧩 Rule-based Intents
     if (intent === "Get Fees Info") {
       return res.json({
         fulfillmentText: "💰 The annual fee for B.Tech is around ₹95,000 per year.",
